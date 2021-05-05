@@ -89,6 +89,7 @@ class Lexer:
 
     def make_tokens(self):
         tokens = []
+        text = ""
 
         while self.current_char != None:
             if self.current_char in ' \t':
@@ -114,12 +115,14 @@ class Lexer:
                 tokens.append(Token(TT_RPAREN))
                 self.advance()
             else:
-                pos_start = self.pos.copy()
-                char = self.current_char
+                # pos_start = self.pos.copy()
+                # char = self.current_char
+                # self.advance()
+                # return [], IllegalCharError(pos_start, self.pos, "'" + char + "'")
+                text = f"{text}{self.current_char}"
                 self.advance()
-                return [], IllegalCharError(pos_start, self.pos, "'" + char + "'")
 
-        return tokens, None
+        return tokens, text
 
     def make_number(self):
         num_str = ''
