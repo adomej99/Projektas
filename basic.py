@@ -176,6 +176,7 @@ class Lexer:
                 global_var['textBuilding'] = f'{global_var["textBuilding"]}{self.current_char}'
                 self.advance()
             elif self.current_char in DIGITS:
+                global_var['textBuilding'] = f'{global_var["textBuilding"]}#'
                 tokens.append(self.make_number())
             # elif self.current_char in LETTERS:
             #     tokens.append(self.make_identifier())
@@ -235,7 +236,6 @@ class Lexer:
             self.advance()
 
         if dot_count == 0:
-            global_var['textBuilding'] = f'{global_var["textBuilding"]}#'
             return Token(TT_INT, int(num_str), pos_start, self.pos)
         else:
             return Token(TT_FLOAT, float(num_str), pos_start, self.pos)
