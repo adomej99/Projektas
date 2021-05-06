@@ -1,12 +1,12 @@
 import basic
 
-f = open("consoleLog.txt", "r")
-command=f.read()
+# f = open("consoleLog.txt", "r")
+# command=f.read()
 
 while True:
     cmd = input('basic > ')
     #result, error = basic.run('<stdin>', text)
-    result, text = basic.run('<stdin>', command)
+    result, text = basic.run('<stdin>', cmd)
 
     consoleLine = ""
     numberCount = 0
