@@ -1,3 +1,5 @@
+global_var = globals()
+global_var['textBuilding'] = ""
 #######################################
 # IMPORTS
 #######################################
@@ -155,138 +157,143 @@ class Token:
 #######################################
 
 class Lexer:
-	def __init__(self, fn, text):
-		self.fn = fn
-		self.text = text
-		self.pos = Position(-1, 0, -1, fn, text)
-		self.current_char = None
-		self.advance()
-	
-	def advance(self):
-		self.pos.advance(self.current_char)
-		self.current_char = self.text[self.pos.idx] if self.pos.idx < len(self.text) else None
+    def __init__(self, fn, text):
+        self.fn = fn
+        self.text = text
+        self.pos = Position(-1, 0, -1, fn, text)
+        self.current_char = None
+        self.advance()
 
-	def make_tokens(self):
-		tokens = []
+    def advance(self):
+        self.pos.advance(self.current_char)
+        self.current_char = self.text[self.pos.idx] if self.pos.idx < len(self.text) else None
 
-		while self.current_char != None:
-			if self.current_char in ' \t':
-				self.advance()
-			elif self.current_char in DIGITS:
-				tokens.append(self.make_number())
-			elif self.current_char in LETTERS:
-				tokens.append(self.make_identifier())
-			elif self.current_char == '+':
-				tokens.append(Token(TT_PLUS, pos_start=self.pos))
-				self.advance()
-			elif self.current_char == '-':
-				tokens.append(Token(TT_MINUS, pos_start=self.pos))
-				self.advance()
-			elif self.current_char == '*':
-				tokens.append(Token(TT_MUL, pos_start=self.pos))
-				self.advance()
-			elif self.current_char == '/':
-				tokens.append(Token(TT_DIV, pos_start=self.pos))
-				self.advance()
-			elif self.current_char == '^':
-				tokens.append(Token(TT_POW, pos_start=self.pos))
-				self.advance()
-			elif self.current_char == '(':
-				tokens.append(Token(TT_LPAREN, pos_start=self.pos))
-				self.advance()
-			elif self.current_char == ')':
-				tokens.append(Token(TT_RPAREN, pos_start=self.pos))
-				self.advance()
-			elif self.current_char == '!':
-				token, error = self.make_not_equals()
-				if error: return [], error
-				tokens.append(token)
-			elif self.current_char == '=':
-				tokens.append(self.make_equals())
-			elif self.current_char == '<':
-				tokens.append(self.make_less_than())
-			elif self.current_char == '>':
-				tokens.append(self.make_greater_than())
-			else:
-				pos_start = self.pos.copy()
-				char = self.current_char
-				self.advance()
-				return [], IllegalCharError(pos_start, self.pos, "'" + char + "'")
+    def make_tokens(self):
+        tokens = []
+        
+        while self.current_char != None:
+            if self.current_char in ' \t':
+                global_var['textBuilding'] = f'{global_var["textBuilding"]}{self.current_char}'
+                self.advance()
+            elif self.current_char in DIGITS:
+                tokens.append(self.make_number())
+            # elif self.current_char in LETTERS:
+            #     tokens.append(self.make_identifier())
+            elif self.current_char == '+':
+                tokens.append(Token(TT_PLUS, pos_start=self.pos))
+                self.advance()
+            elif self.current_char == '-':
+                tokens.append(Token(TT_MINUS, pos_start=self.pos))
+                self.advance()
+            elif self.current_char == '*':
+                tokens.append(Token(TT_MUL, pos_start=self.pos))
+                self.advance()
+            elif self.current_char == '/':
+                tokens.append(Token(TT_DIV, pos_start=self.pos))
+                self.advance()
+            elif self.current_char == '^':
+                tokens.append(Token(TT_POW, pos_start=self.pos))
+                self.advance()
+            elif self.current_char == '(':
+                tokens.append(Token(TT_LPAREN, pos_start=self.pos))
+                self.advance()
+            elif self.current_char == ')':
+                tokens.append(Token(TT_RPAREN, pos_start=self.pos))
+                self.advance()
+            elif self.current_char == '!':
+                token, error = self.make_not_equals()
+                if error: return [], error
+                tokens.append(token)
+            elif self.current_char == '=':
+                tokens.append(self.make_equals())
+            elif self.current_char == '<':
+                tokens.append(self.make_less_than())
+            elif self.current_char == '>':
+                tokens.append(self.make_greater_than())
+            else:
+                # pos_start = self.pos.copy()
+                # char = self.current_char
+                # self.advance()
+                # return [], IllegalCharError(pos_start, self.pos, "'" + char + "'")
+                global_var['textBuilding'] = f'{global_var["textBuilding"]}{self.current_char}'
+                self.advance()
 
-		tokens.append(Token(TT_EOF, pos_start=self.pos))
-		return tokens, None
 
-	def make_number(self):
-		num_str = ''
-		dot_count = 0
-		pos_start = self.pos.copy()
+        tokens.append(Token(TT_EOF, pos_start=self.pos))
+        return tokens
 
-		while self.current_char != None and self.current_char in DIGITS + '.':
-			if self.current_char == '.':
-				if dot_count == 1: break
-				dot_count += 1
-			num_str += self.current_char
-			self.advance()
+    def make_number(self):
+        num_str = ''
+        dot_count = 0
+        pos_start = self.pos.copy()
 
-		if dot_count == 0:
-			return Token(TT_INT, int(num_str), pos_start, self.pos)
-		else:
-			return Token(TT_FLOAT, float(num_str), pos_start, self.pos)
+        while self.current_char != None and self.current_char in DIGITS + '.':
+            if self.current_char == '.':
+                if dot_count == 1: break
+                dot_count += 1
+            num_str += self.current_char
+            self.advance()
 
-	def make_identifier(self):
-		id_str = ''
-		pos_start = self.pos.copy()
+        if dot_count == 0:
+            global_var['textBuilding'] = f'{global_var["textBuilding"]}#'
+            return Token(TT_INT, int(num_str), pos_start, self.pos)
+        else:
+            return Token(TT_FLOAT, float(num_str), pos_start, self.pos)
 
-		while self.current_char != None and self.current_char in LETTERS_DIGITS + '_':
-			id_str += self.current_char
-			self.advance()
+    def make_identifier(self):
+        id_str = ''
+        pos_start = self.pos.copy()
 
-		tok_type = TT_KEYWORD if id_str in KEYWORDS else TT_IDENTIFIER
-		return Token(tok_type, id_str, pos_start, self.pos)
+        while self.current_char != None and self.current_char in LETTERS_DIGITS + '_':
+            id_str += self.current_char
+            self.advance()
 
-	def make_not_equals(self):
-		pos_start = self.pos.copy()
-		self.advance()
+        tok_type = TT_KEYWORD if id_str in KEYWORDS else TT_IDENTIFIER
+        return Token(tok_type, id_str, pos_start, self.pos)
 
-		if self.current_char == '=':
-			self.advance()
-			return Token(TT_NE, pos_start=pos_start, pos_end=self.pos), None
+    def make_not_equals(self):
+        pos_start = self.pos.copy()
+        self.advance()
 
-		self.advance()
-		return None, ExpectedCharError(pos_start, self.pos, "'=' (after '!')")
-	
-	def make_equals(self):
-		tok_type = TT_EQ
-		pos_start = self.pos.copy()
-		self.advance()
+        if self.current_char == '=':
+            self.advance()
+            return Token(TT_NE, pos_start=pos_start, pos_end=self.pos), None
 
-		if self.current_char == '=':
-			self.advance()
-			tok_type = TT_EE
+        self.advance()
+        return None, ExpectedCharError(pos_start, self.pos, "'=' (after '!')")
 
-		return Token(tok_type, pos_start=pos_start, pos_end=self.pos)
+    def make_equals(self):
+        tok_type = TT_EQ
+        pos_start = self.pos.copy()
+        self.advance()
 
-	def make_less_than(self):
-		tok_type = TT_LT
-		pos_start = self.pos.copy()
-		self.advance()
+        if self.current_char == '=':
+            self.advance()
+            tok_type = TT_EE
 
-		if self.current_char == '=':
-			self.advance()
-			tok_type = TT_LTE
+        return Token(tok_type, pos_start=pos_start, pos_end=self.pos)
 
-		return Token(tok_type, pos_start=pos_start, pos_end=self.pos)
+    def make_less_than(self):
+        tok_type = TT_LT
+        pos_start = self.pos.copy()
+        self.advance()
 
-	def make_greater_than(self):
-		tok_type = TT_GT
-		pos_start = self.pos.copy()
-		self.advance()
+        if self.current_char == '=':
+            self.advance()
+            tok_type = TT_LTE
 
-		if self.current_char == '=':
-			self.advance()
-			tok_type = TT_GTE
+        return Token(tok_type, pos_start=pos_start, pos_end=self.pos)
 
-		return Token(tok_type, pos_start=pos_start, pos_end=self.pos)
+    def make_greater_than(self):
+        tok_type = TT_GT
+        pos_start = self.pos.copy()
+        self.advance()
+
+        if self.current_char == '=':
+            self.advance()
+            tok_type = TT_GTE
+
+        return Token(tok_type, pos_start=pos_start, pos_end=self.pos)
 
 #######################################
 # NODES
@@ -881,164 +888,165 @@ class SymbolTable:
 #######################################
 
 class Interpreter:
-	def visit(self, node, context):
-		method_name = f'visit_{type(node).__name__}'
-		method = getattr(self, method_name, self.no_visit_method)
-		return method(node, context)
+    def visit(self, node, context):
+        method_name = f'visit_{type(node).__name__}'
+        method = getattr(self, method_name, self.no_visit_method)
+        return method(node, context)
 
-	def no_visit_method(self, node, context):
-		raise Exception(f'No visit_{type(node).__name__} method defined')
+    def no_visit_method(self, node, context):
+        raise Exception(f'No visit_{type(node).__name__} method defined')
 
-	###################################
+    ###################################
 
-	def visit_NumberNode(self, node, context):
-		return RTResult().success(
-			Number(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
-		)
+    def visit_NumberNode(self, node, context):
+        return RTResult().success(
+            Number(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
+        )
 
-	def visit_VarAccessNode(self, node, context):
-		res = RTResult()
-		var_name = node.var_name_tok.value
-		value = context.symbol_table.get(var_name)
+    def visit_VarAccessNode(self, node, context):
+        res = RTResult()
+        var_name = node.var_name_tok.value
+        value = context.symbol_table.get(var_name)
 
-		if not value:
-			return res.failure(RTError(
-				node.pos_start, node.pos_end,
-				f"'{var_name}' is not defined",
-				context
-			))
+        if not value:
+            return res.failure(RTError(
+                node.pos_start, node.pos_end,
+                f"'{var_name}' is not defined",
+                context
+            ))
 
-		value = value.copy().set_pos(node.pos_start, node.pos_end)
-		return res.success(value)
+        value = value.copy().set_pos(node.pos_start, node.pos_end)
+        return res.success(value)
 
-	def visit_VarAssignNode(self, node, context):
-		res = RTResult()
-		var_name = node.var_name_tok.value
-		value = res.register(self.visit(node.value_node, context))
-		if res.error: return res
+    def visit_VarAssignNode(self, node, context):
+        res = RTResult()
+        var_name = node.var_name_tok.value
+        value = res.register(self.visit(node.value_node, context))
+        if res.error: return res
 
-		context.symbol_table.set(var_name, value)
-		return res.success(value)
+        context.symbol_table.set(var_name, value)
+        return res.success(value)
 
-	def visit_BinOpNode(self, node, context):
-		res = RTResult()
-		left = res.register(self.visit(node.left_node, context))
-		if res.error: return res
-		right = res.register(self.visit(node.right_node, context))
-		if res.error: return res
+    def visit_BinOpNode(self, node, context):
+        res = RTResult()
+        left = res.register(self.visit(node.left_node, context))
+        if res.error: return res
+        right = res.register(self.visit(node.right_node, context))
+        if res.error: return res
 
-		if node.op_tok.type == TT_PLUS:
-			result, error = left.added_to(right)
-		elif node.op_tok.type == TT_MINUS:
-			result, error = left.subbed_by(right)
-		elif node.op_tok.type == TT_MUL:
-			result, error = left.multed_by(right)
-		elif node.op_tok.type == TT_DIV:
-			result, error = left.dived_by(right)
-		elif node.op_tok.type == TT_POW:
-			result, error = left.powed_by(right)
-		elif node.op_tok.type == TT_EE:
-			result, error = left.get_comparison_eq(right)
-		elif node.op_tok.type == TT_NE:
-			result, error = left.get_comparison_ne(right)
-		elif node.op_tok.type == TT_LT:
-			result, error = left.get_comparison_lt(right)
-		elif node.op_tok.type == TT_GT:
-			result, error = left.get_comparison_gt(right)
-		elif node.op_tok.type == TT_LTE:
-			result, error = left.get_comparison_lte(right)
-		elif node.op_tok.type == TT_GTE:
-			result, error = left.get_comparison_gte(right)
-		elif node.op_tok.matches(TT_KEYWORD, 'AND'):
-			result, error = left.anded_by(right)
-		elif node.op_tok.matches(TT_KEYWORD, 'OR'):
-			result, error = left.ored_by(right)
+        if node.op_tok.type == TT_PLUS:
+            result, error = left.added_to(right)
+        elif node.op_tok.type == TT_MINUS:
+            result, error = left.subbed_by(right)
+        elif node.op_tok.type == TT_MUL:
+            result, error = left.multed_by(right)
+        elif node.op_tok.type == TT_DIV:
+            result, error = left.dived_by(right)
+        elif node.op_tok.type == TT_POW:
+            result, error = left.powed_by(right)
+        elif node.op_tok.type == TT_EE:
+            result, error = left.get_comparison_eq(right)
+        elif node.op_tok.type == TT_NE:
+            result, error = left.get_comparison_ne(right)
+        elif node.op_tok.type == TT_LT:
+            result, error = left.get_comparison_lt(right)
+        elif node.op_tok.type == TT_GT:
+            result, error = left.get_comparison_gt(right)
+        elif node.op_tok.type == TT_LTE:
+            result, error = left.get_comparison_lte(right)
+        elif node.op_tok.type == TT_GTE:
+            result, error = left.get_comparison_gte(right)
+        elif node.op_tok.matches(TT_KEYWORD, 'AND'):
+            result, error = left.anded_by(right)
+        elif node.op_tok.matches(TT_KEYWORD, 'OR'):
+            result, error = left.ored_by(right)
 
-		if error:
-			return res.failure(error)
-		else:
-			return res.success(result.set_pos(node.pos_start, node.pos_end))
+        if error:
+            return res.failure(error)
+        else:
+            #global_var['textBuilding'] = f'{global_var["textBuilding"]}{result}'
+            return res.success(result.set_pos(node.pos_start, node.pos_end))
 
-	def visit_UnaryOpNode(self, node, context):
-		res = RTResult()
-		number = res.register(self.visit(node.node, context))
-		if res.error: return res
+    def visit_UnaryOpNode(self, node, context):
+        res = RTResult()
+        number = res.register(self.visit(node.node, context))
+        if res.error: return res
 
-		error = None
+        error = None
 
-		if node.op_tok.type == TT_MINUS:
-			number, error = number.multed_by(Number(-1))
-		elif node.op_tok.matches(TT_KEYWORD, 'NOT'):
-			number, error = number.notted()
+        if node.op_tok.type == TT_MINUS:
+            number, error = number.multed_by(Number(-1))
+        elif node.op_tok.matches(TT_KEYWORD, 'NOT'):
+            number, error = number.notted()
 
-		if error:
-			return res.failure(error)
-		else:
-			return res.success(number.set_pos(node.pos_start, node.pos_end))
+        if error:
+            return res.failure(error)
+        else:
+            return res.success(number.set_pos(node.pos_start, node.pos_end))
 
-	def visit_IfNode(self, node, context):
-		res = RTResult()
+    def visit_IfNode(self, node, context):
+        res = RTResult()
 
-		for condition, expr in node.cases:
-			condition_value = res.register(self.visit(condition, context))
-			if res.error: return res
+        for condition, expr in node.cases:
+            condition_value = res.register(self.visit(condition, context))
+            if res.error: return res
 
-			if condition_value.is_true():
-				expr_value = res.register(self.visit(expr, context))
-				if res.error: return res
-				return res.success(expr_value)
+            if condition_value.is_true():
+                expr_value = res.register(self.visit(expr, context))
+                if res.error: return res
+                return res.success(expr_value)
 
-		if node.else_case:
-			else_value = res.register(self.visit(node.else_case, context))
-			if res.error: return res
-			return res.success(else_value)
+        if node.else_case:
+            else_value = res.register(self.visit(node.else_case, context))
+            if res.error: return res
+            return res.success(else_value)
 
-		return res.success(None)
+        return res.success(None)
 
-	def visit_ForNode(self, node, context):
-		res = RTResult()
+    def visit_ForNode(self, node, context):
+        res = RTResult()
 
-		start_value = res.register(self.visit(node.start_value_node, context))
-		if res.error: return res
+        start_value = res.register(self.visit(node.start_value_node, context))
+        if res.error: return res
 
-		end_value = res.register(self.visit(node.end_value_node, context))
-		if res.error: return res
+        end_value = res.register(self.visit(node.end_value_node, context))
+        if res.error: return res
 
-		if node.step_value_node:
-			step_value = res.register(self.visit(node.step_value_node, context))
-			if res.error: return res
-		else:
-			step_value = Number(1)
+        if node.step_value_node:
+            step_value = res.register(self.visit(node.step_value_node, context))
+            if res.error: return res
+        else:
+            step_value = Number(1)
 
-		i = start_value.value
+        i = start_value.value
 
-		if step_value.value >= 0:
-			condition = lambda: i < end_value.value
-		else:
-			condition = lambda: i > end_value.value
-		
-		while condition():
-			context.symbol_table.set(node.var_name_tok.value, Number(i))
-			i += step_value.value
+        if step_value.value >= 0:
+            condition = lambda: i < end_value.value
+        else:
+            condition = lambda: i > end_value.value
+        
+        while condition():
+            context.symbol_table.set(node.var_name_tok.value, Number(i))
+            i += step_value.value
 
-			res.register(self.visit(node.body_node, context))
-			if res.error: return res
+            res.register(self.visit(node.body_node, context))
+            if res.error: return res
 
-		return res.success(None)
+        return res.success(None)
 
-	def visit_WhileNode(self, node, context):
-		res = RTResult()
+    def visit_WhileNode(self, node, context):
+        res = RTResult()
 
-		while True:
-			condition = res.register(self.visit(node.condition_node, context))
-			if res.error: return res
+        while True:
+            condition = res.register(self.visit(node.condition_node, context))
+            if res.error: return res
 
-			if not condition.is_true(): break
+            if not condition.is_true(): break
 
-			res.register(self.visit(node.body_node, context))
-			if res.error: return res
+            res.register(self.visit(node.body_node, context))
+            if res.error: return res
 
-		return res.success(None)
+        return res.success(None)
 
 #######################################
 # RUN
@@ -1050,20 +1058,22 @@ global_symbol_table.set("FALSE", Number(0))
 global_symbol_table.set("TRUE", Number(1))
 
 def run(fn, text):
-	# Generate tokens
-	lexer = Lexer(fn, text)
-	tokens, error = lexer.make_tokens()
-	if error: return None, error
-	
-	# Generate AST
-	parser = Parser(tokens)
-	ast = parser.parse()
-	if ast.error: return None, ast.error
+    global_var['textBuilding']=""
+    # Generate tokens
+    lexer = Lexer(fn, text)
+    #tokens, error = lexer.make_tokens()
+    tokens = lexer.make_tokens()
+    #if error: return None, error
+    # Generate AST
+    parser = Parser(tokens)
+    ast = parser.parse()
+    if ast.error: return None, ast.error
 
-	# Run program
-	interpreter = Interpreter()
-	context = Context('<program>')
-	context.symbol_table = global_symbol_table
-	result = interpreter.visit(ast.node, context)
+    # Run program
+    interpreter = Interpreter()
+    context = Context('<program>')
+    context.symbol_table = global_symbol_table
+    result = interpreter.visit(ast.node, context)
 
-	return result.value, result.error
+    #return result.value, result.error
+    return result.value, global_var['textBuilding']
