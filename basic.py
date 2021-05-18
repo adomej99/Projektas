@@ -50,6 +50,12 @@ class RTError(Error):
     super().__init__(pos_start, pos_end, 'Runtime Error', details)
     self.context = context
 
+class Printas(Error):
+  def __init__(self, pos_start, pos_end, details, context):
+    super().__init__(pos_start, pos_end, 'Runtime Erroras', details)
+    print("Printas")
+    self.context = context
+
   def as_string(self):
     result  = self.generate_traceback()
     result += f'{self.error_name}: {self.details}'
@@ -101,7 +107,7 @@ TT_INT				= 'INT'
 TT_FLOAT    	= 'FLOAT'
 TT_STRING			= 'STRING'
 TT_IDENTIFIER	= 'IDENTIFIER'
-TT_TEXT	      = 'TT_TEXT'
+TT_TEXT       = 'TEXT'
 TT_KEYWORD		= 'KEYWORD'
 TT_PLUS     	= 'PLUS'
 TT_MINUS    	= 'MINUS'
@@ -296,17 +302,9 @@ class Lexer:
       id_str += self.current_char
       self.advance()
 
-    if self.keyword in KEYWORDS:
-      tok_type = TT_IDENTIFIER
-      self.keyword = None
-    elif id_str in KEYWORDS:
-      self.keyword = id_str
-      tok_type = TT_KEYWORD
-    else:
-      tok_type = TT_TEXT
-      self.keyword = None
-
-    #tok_type = TT_KEYWORD if id_str in KEYWORDS else TT_IDENTIFIER
+    tok_type = TT_KEYWORD if id_str in KEYWORDS else TT_IDENTIFIER
+    if id_str in KEYWORDS:
+      print(id_str)
     return Token(tok_type, id_str, pos_start, self.pos)
 
   def make_minus_or_arrow(self):
@@ -406,14 +404,16 @@ class ListNode:
 class VarAccessNode:
   def __init__(self, var_name_tok):
     self.var_name_tok = var_name_tok
-
+    print(var_name_tok)
     self.pos_start = self.var_name_tok.pos_start
     self.pos_end = self.var_name_tok.pos_end
 
 class VarAssignNode:
   def __init__(self, var_name_tok, value_node):
     self.var_name_tok = var_name_tok
+    
     self.value_node = value_node
+    print(value_node)
 
     self.pos_start = self.var_name_tok.pos_start
     self.pos_end = self.value_node.pos_end
@@ -656,6 +656,7 @@ class Parser:
         self.current_tok.pos_start, self.current_tok.pos_end,
         "Expected 'RETURN', 'CONTINUE', 'BREAK', 'VAR', 'IF', 'FOR', 'WHILE', 'DO', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
       ))
+
     return res.success(expr)
 
   def expr(self):
@@ -839,6 +840,9 @@ class Parser:
       if res.error: return res
       return res.success(func_def)
 
+
+    # print("asd123")
+    # print(tok)
     return res.failure(InvalidSyntaxError(
       tok.pos_start, tok.pos_end,
       "Expected int, float, identifier, '+', '-', '(', '[', IF', 'FOR', 'WHILE', 'DO'"
@@ -1858,6 +1862,7 @@ class BuiltInFunction(BaseFunction):
     _, error = run(fn, script)
     
     if error:
+      print(error.as_string()+"asdasdasd")
       return RTResult().failure(RTError(
         self.pos_start, self.pos_end,
         f"Failed to finish executing script \"{fn}\"\n" +
@@ -1958,8 +1963,7 @@ class Interpreter:
     value = context.symbol_table.get(var_name)
 
     if not value:
-      return res.failure(RTError(
-        node.pos_start, node.pos_end,
+      return res.failure(Printas(node.pos_start, node.pos_end,
         f"'{var_name}' is not defined",
         context
       ))
