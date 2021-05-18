@@ -1,27 +1,14 @@
 import basic
 
-# f = open("consoleLog.txt", "r")
-# command=f.read()
-
 while True:
-    cmd = input('basic > ')
-    #result, error = basic.run('<stdin>', text)
-    result, text = basic.run('<stdin>', cmd)
+	text = input('basic > ')
+	if text.strip() == "": continue
+	result, error = basic.run('<stdin>', text)
 
-    consoleLine = ""
-    numberCount = 0
-    for char in text:
-        if char != "#" :
-            consoleLine += char
-        if (char == "#"):
-            numberCount += 1
-        if numberCount == 2 :
-            consoleLine += str(result)
-            numberCount = 0 
-
-
-    # resultIndex = text.find("#")
-    # text =  text[:resultIndex] + text[1+resultIndex:]
-    # text = text[:resultIndex] + str(result) + text[resultIndex:]
-
-    print(consoleLine)
+	if error:
+		print(error.as_string())
+	elif result:
+		if len(result.elements) == 1:
+			print(repr(result.elements[0]))
+		else:
+			print(repr(result))
