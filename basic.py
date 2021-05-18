@@ -8,6 +8,8 @@ import string
 import os
 import math
 
+global_tokens = []
+
 #######################################
 # CONSTANTS
 #######################################
@@ -89,6 +91,16 @@ class Position:
       self.col = 0
 
     return self
+  
+  def deadvance(self, current_char=None):
+    self.idx -= 1
+    self.col -= 1
+
+    if current_char == '\n':
+      self.ln -= 1
+      self.col = 0
+
+    return self
 
   def copy(self):
     return Position(self.idx, self.ln, self.col, self.fn, self.ftxt)
@@ -101,7 +113,6 @@ TT_INT				= 'INT'
 TT_FLOAT    	= 'FLOAT'
 TT_STRING			= 'STRING'
 TT_IDENTIFIER	= 'IDENTIFIER'
-TT_TEXT	      = 'TT_TEXT'
 TT_KEYWORD		= 'KEYWORD'
 TT_PLUS     	= 'PLUS'
 TT_MINUS    	= 'MINUS'
@@ -136,7 +147,7 @@ KEYWORDS = [
   'TO',
   'STEP',
   'WHILE',
-  'DO',
+  'FUN',
   'THEN',
   'END',
   'RETURN',
@@ -175,7 +186,6 @@ class Lexer:
     self.pos = Position(-1, 0, -1, fn, text)
     self.current_char = None
     self.advance()
-    self.keyword = None
   
   def advance(self):
     self.pos.advance(self.current_char)
@@ -183,6 +193,7 @@ class Lexer:
 
   def make_tokens(self):
     tokens = []
+    
 
     while self.current_char != None:
       if self.current_char in ' \t':
@@ -244,6 +255,9 @@ class Lexer:
         return [], IllegalCharError(pos_start, self.pos, "'" + char + "'")
 
     tokens.append(Token(TT_EOF, pos_start=self.pos))
+    # global_tokens = tokens
+    # print(global_tokens)
+    print(tokens)
     return tokens, None
 
   def make_number(self):
@@ -296,17 +310,7 @@ class Lexer:
       id_str += self.current_char
       self.advance()
 
-    if self.keyword in KEYWORDS:
-      tok_type = TT_IDENTIFIER
-      self.keyword = None
-    elif id_str in KEYWORDS:
-      self.keyword = id_str
-      tok_type = TT_KEYWORD
-    else:
-      tok_type = TT_TEXT
-      self.keyword = None
-
-    #tok_type = TT_KEYWORD if id_str in KEYWORDS else TT_IDENTIFIER
+    tok_type = TT_KEYWORD if id_str in KEYWORDS else TT_IDENTIFIER
     return Token(tok_type, id_str, pos_start, self.pos)
 
   def make_minus_or_arrow(self):
@@ -414,7 +418,6 @@ class VarAssignNode:
   def __init__(self, var_name_tok, value_node):
     self.var_name_tok = var_name_tok
     self.value_node = value_node
-
     self.pos_start = self.var_name_tok.pos_start
     self.pos_end = self.value_node.pos_end
 
@@ -578,7 +581,6 @@ class Parser:
 
   def parse(self):
     res = self.statements()
-    print(res.error)
     if not res.error and self.current_tok.type != TT_EOF:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
@@ -649,17 +651,18 @@ class Parser:
       self.advance()
       return res.success(BreakNode(pos_start, self.current_tok.pos_start.copy()))
 
-    #print(self.expr())
     expr = res.register(self.expr())
     if res.error:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        "Expected 'RETURN', 'CONTINUE', 'BREAK', 'VAR', 'IF', 'FOR', 'WHILE', 'DO', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
+        "Expected 'RETURN', 'CONTINUE', 'BREAK', 'VAR', 'IF', 'FOR', 'WHILE', 'FUN', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
       ))
     return res.success(expr)
 
   def expr(self):
     res = ParseResult()
+
+    
 
     if self.current_tok.matches(TT_KEYWORD, 'VAR'):
       res.register_advancement()
@@ -672,7 +675,29 @@ class Parser:
         ))
 
       var_name = self.current_tok
-      res.register_advancement()
+      value = self.current_tok.value
+      if self.current_tok.value in global_tokens:
+        check = 0
+        count = 0
+        while check != 1:
+          self.reverse()
+          count+=1
+          if self.current_tok.value == value:
+            self.advance()
+            self.advance()
+            count=count-2
+            print("Kintamojo:",value," Sena reiksme:", self.current_tok)
+            check = 1
+        while count != 0:
+          self.advance()
+          count-=1
+        self.advance()
+        self.advance()
+        print("Nauja reiksme: ", self.current_tok)
+        self.reverse()
+        self.reverse()
+      else:
+        global_tokens.append(self.current_tok.value)
       self.advance()
 
       if self.current_tok.type != TT_EQ:
@@ -692,7 +717,7 @@ class Parser:
     if res.error:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        "Expected 'VAR', 'IF', 'FOR', 'WHILE', 'DO', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
+        "Expected 'VAR', 'IF', 'FOR', 'WHILE', 'FUN', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
       ))
 
     return res.success(node)
@@ -714,7 +739,7 @@ class Parser:
     if res.error:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        "Expected int, float, identifier, '+', '-', '(', '[', 'IF', 'FOR', 'WHILE', 'DO' or 'NOT'"
+        "Expected int, float, identifier, '+', '-', '(', '[', 'IF', 'FOR', 'WHILE', 'FUN' or 'NOT'"
       ))
 
     return res.success(node)
@@ -759,7 +784,7 @@ class Parser:
         if res.error:
           return res.failure(InvalidSyntaxError(
             self.current_tok.pos_start, self.current_tok.pos_end,
-            "Expected ')', 'VAR', 'IF', 'FOR', 'WHILE', 'DO', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
+            "Expected ')', 'VAR', 'IF', 'FOR', 'WHILE', 'FUN', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
           ))
 
         while self.current_tok.type == TT_COMMA:
@@ -834,14 +859,14 @@ class Parser:
       if res.error: return res
       return res.success(while_expr)
 
-    elif tok.matches(TT_KEYWORD, 'DO'):
+    elif tok.matches(TT_KEYWORD, 'FUN'):
       func_def = res.register(self.func_def())
       if res.error: return res
       return res.success(func_def)
 
     return res.failure(InvalidSyntaxError(
       tok.pos_start, tok.pos_end,
-      "Expected int, float, identifier, '+', '-', '(', '[', IF', 'FOR', 'WHILE', 'DO'"
+      "Expected int, float, identifier, '+', '-', '(', '[', IF', 'FOR', 'WHILE', 'FUN'"
     ))
 
   def list_expr(self):
@@ -866,7 +891,7 @@ class Parser:
       if res.error:
         return res.failure(InvalidSyntaxError(
           self.current_tok.pos_start, self.current_tok.pos_end,
-          "Expected ']', 'VAR', 'IF', 'FOR', 'WHILE', 'DO', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
+          "Expected ']', 'VAR', 'IF', 'FOR', 'WHILE', 'FUN', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
         ))
 
       while self.current_tok.type == TT_COMMA:
@@ -1137,10 +1162,10 @@ class Parser:
   def func_def(self):
     res = ParseResult()
 
-    if not self.current_tok.matches(TT_KEYWORD, 'DO'):
+    if not self.current_tok.matches(TT_KEYWORD, 'FUN'):
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        f"Expected 'DO'"
+        f"Expected 'FUN'"
       ))
 
     res.register_advancement()
@@ -2198,7 +2223,6 @@ def run(fn, text):
   # Generate tokens
   lexer = Lexer(fn, text)
   tokens, error = lexer.make_tokens()
-  print(tokens)
   if error: return None, error
   
   # Generate AST
@@ -2211,4 +2235,5 @@ def run(fn, text):
   context = Context('<program>')
   context.symbol_table = global_symbol_table
   result = interpreter.visit(ast.node, context)
+
   return result.value, result.error
