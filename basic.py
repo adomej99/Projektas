@@ -101,6 +101,7 @@ TT_INT				= 'INT'
 TT_FLOAT    	= 'FLOAT'
 TT_STRING			= 'STRING'
 TT_IDENTIFIER	= 'IDENTIFIER'
+TT_TEXT	      = 'TT_TEXT'
 TT_KEYWORD		= 'KEYWORD'
 TT_PLUS     	= 'PLUS'
 TT_MINUS    	= 'MINUS'
@@ -174,6 +175,7 @@ class Lexer:
     self.pos = Position(-1, 0, -1, fn, text)
     self.current_char = None
     self.advance()
+    self.keyword = None
   
   def advance(self):
     self.pos.advance(self.current_char)
@@ -294,7 +296,17 @@ class Lexer:
       id_str += self.current_char
       self.advance()
 
-    tok_type = TT_KEYWORD if id_str in KEYWORDS else TT_IDENTIFIER
+    if self.keyword in KEYWORDS:
+      tok_type = TT_IDENTIFIER
+      self.keyword = None
+    elif id_str in KEYWORDS:
+      self.keyword = id_str
+      tok_type = TT_KEYWORD
+    else:
+      tok_type = TT_TEXT
+      self.keyword = None
+
+    #tok_type = TT_KEYWORD if id_str in KEYWORDS else TT_IDENTIFIER
     return Token(tok_type, id_str, pos_start, self.pos)
 
   def make_minus_or_arrow(self):
@@ -566,6 +578,7 @@ class Parser:
 
   def parse(self):
     res = self.statements()
+    print(res.error)
     if not res.error and self.current_tok.type != TT_EOF:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
@@ -636,6 +649,7 @@ class Parser:
       self.advance()
       return res.success(BreakNode(pos_start, self.current_tok.pos_start.copy()))
 
+    print(self.expr())
     expr = res.register(self.expr())
     if res.error:
       return res.failure(InvalidSyntaxError(
@@ -2184,6 +2198,7 @@ def run(fn, text):
   # Generate tokens
   lexer = Lexer(fn, text)
   tokens, error = lexer.make_tokens()
+  print(tokens)
   if error: return None, error
   
   # Generate AST
@@ -2196,5 +2211,4 @@ def run(fn, text):
   context = Context('<program>')
   context.symbol_table = global_symbol_table
   result = interpreter.visit(ast.node, context)
-
   return result.value, result.error
