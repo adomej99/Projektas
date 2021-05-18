@@ -1,8 +1,8 @@
 # This is a very useful piece of software
 
-FUN oopify(prefix) -> prefix + "oop"
+DO oopify(prefix) -> prefix + "oop"
 
-FUN join(elements, separator)
+DO join(elements, separator)
 	VAR result = ""
 	VAR len = LEN(elements)
 
@@ -14,7 +14,7 @@ FUN join(elements, separator)
 	RETURN result
 END
 
-FUN map(elements, func)
+DO map(elements, func)
 	VAR new_elements = []
 
 	FOR i = 0 TO LEN(elements) THEN
