@@ -1,5 +1,7 @@
 import basic
 
+f = open("demofile.txt", "r")
+
 while True:
 	text = input('basic > ')
 	if text.strip() == "": continue
