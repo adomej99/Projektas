@@ -673,27 +673,39 @@ class Parser:
           self.current_tok.pos_start, self.current_tok.pos_end,
           "Expected identifier"
         ))
-
+      check_value = 0
       var_name = self.current_tok
       value = self.current_tok.value
       if self.current_tok.value in global_tokens:
         check = 0
         count = 0
+        self.advance()
+        self.advance()
+        new_value = self.current_tok.value
+        self.reverse()
+        self.reverse()
         while check != 1:
           self.reverse()
           count+=1
           if self.current_tok.value == value:
             self.advance()
             self.advance()
+            
             count=count-2
-            print("Kintamojo:",value," Sena reiksme:", self.current_tok)
+            if(new_value != self.current_tok.value):
+              check_value = 1
+            else:
+              check_value = 0
+            if(check_value != 0):
+              print("Kintamojo:",value," Sena reiksme:", self.current_tok)
             check = 1
         while count != 0:
           self.advance()
           count-=1
         self.advance()
         self.advance()
-        print("Nauja reiksme: ", self.current_tok)
+        if(check_value != 0):
+          print("Nauja reiksme: ", self.current_tok)
         self.reverse()
         self.reverse()
       else:

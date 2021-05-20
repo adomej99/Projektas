@@ -1,10 +1,13 @@
 # This is a very useful piece of software
 
+
 VAR asd = 1
 VAR asd = 2
 VAR kazkas = 1
 VAR kazkur = 100
 VAR asd = 3
 VAR asd = 777
-
-PRINT(asd)
+VAR zodis = 7
+VAR zodis = 7
+VAR zodis = 0.7
+VAR test = 1
