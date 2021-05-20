@@ -1,0 +1,56 @@
+# This is a very useful piece of software
+
+FUN oopify(prefix) -> prefix + "oop"
+
+FUN join(elements, separator)
+	VAR result = ""
+	VAR len = LEN(elements)
+
+	FOR i = 0 TO len THEN
+		VAR result = result + elements/i
+		IF i != len - 1 THEN VAR result = result + separator
+	END
+
+	RETURN result
+END
+
+FUN map(elements, func)
+	VAR new_elements = []
+
+	FOR i = 0 TO LEN(elements) THEN
+		APPEND(new_elements, func(elements/i))
+	END
+
+	RETURN new_elements
+END
+
+PRINT("Greetings universe!")
+
+VAR result = 0
+VAR n = 5
+VAR t1 = 0
+VAR t2 = 1
+VAR nextTerm = 0
+
+FOR i = 1 TO n THEN
+		IF i == 1 THEN PRINT(t1)
+		IF i == 2 THEN PRINT(t2)
+
+		VAR nextTerm = t1 + t2
+        VAR t1 = t2
+        VAR t2 = nextTerm
+        PRINT(nextTerm)
+
+	
+END
+PRINT("Ciklo atsakymas^^^^^")
+
+FUN fib(n)
+    IF n <= 1 THEN RETURN n 
+    RETURN fib(n-1) + fib(n-2)
+END
+
+PRINT(fib(5))
+PRINT("Rekursijos atsakymas^^^^^^")
+
+

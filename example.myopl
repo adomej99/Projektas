@@ -1,13 +1,30 @@
-# This is a very useful piece of software
 
 
-VAR asd = 1
-VAR asd = 2
-VAR kazkas = 1
-VAR kazkur = 100
-VAR asd = 3
-VAR asd = 777
-VAR zodis = 7
-VAR zodis = 7
-VAR zodis = 0.7
-VAR test = 1
+PRINT("asd")
+
+FOR i = 1 TO n THEN
+        IF i == 1 THEN PRINT(t1)
+        
+        IF i == 2 THEN PRINT(t2)
+        
+        nextTerm = t1 + t2;
+        t1 = t2;
+        t2 = nextTerm;
+        PRINT(nextTerm)
+END
+
+int fib(int n)
+{
+    if (n <= 1)
+        return n;
+    return fib(n-1) + fib(n-2);
+}
+ 
+int main ()
+{
+    int n = 9;
+    cout << fib(n);
+    getchar();
+    return 0;
+}
+

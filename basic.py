@@ -8,7 +8,21 @@ import string
 import os
 import math
 
+avoid = ["NULL", "FALSE", "TRUE", "MATH_PI", "PRINT", "PRINT_RET", "INPUT",
+"INPUT_INT", "CLEAR", "CLS", "IS_NUM", "IS_STR", "IS_LIST", "IS_FUN", "APPEND",
+"POP", "EXTEND", "LEN", "RUN", "fn"]
+
+class variables: 
+    def __init__(self, name, value): 
+        self.name = name 
+        self.value = value
+
+listas = []
+
+
+
 global_tokens = []
+global_dict = {}
 
 #######################################
 # CONSTANTS
@@ -255,9 +269,6 @@ class Lexer:
         return [], IllegalCharError(pos_start, self.pos, "'" + char + "'")
 
     tokens.append(Token(TT_EOF, pos_start=self.pos))
-    # global_tokens = tokens
-    # print(global_tokens)
-    print(tokens)
     return tokens, None
 
   def make_number(self):
@@ -418,6 +429,7 @@ class VarAssignNode:
   def __init__(self, var_name_tok, value_node):
     self.var_name_tok = var_name_tok
     self.value_node = value_node
+    # print(self.value_node)
     self.pos_start = self.var_name_tok.pos_start
     self.pos_end = self.value_node.pos_end
 
@@ -426,11 +438,15 @@ class BinOpNode:
     self.left_node = left_node
     self.op_tok = op_tok
     self.right_node = right_node
+    # print(self.left_node)
+    # print(self.right_node)
 
     self.pos_start = self.left_node.pos_start
     self.pos_end = self.right_node.pos_end
 
   def __repr__(self):
+    print("asd")
+    # print(f'({self.left_node}, {self.op_tok}, {self.right_node})')
     return f'({self.left_node}, {self.op_tok}, {self.right_node})'
 
 class UnaryOpNode:
@@ -536,6 +552,7 @@ class ParseResult:
 
   def register(self, res):
     self.last_registered_advance_count = res.advance_count
+    
     self.advance_count += res.advance_count
     if res.error: self.error = res.error
     return res.node
@@ -544,10 +561,12 @@ class ParseResult:
     if res.error:
       self.to_reverse_count = res.advance_count
       return None
+    # print(res)
     return self.register(res)
 
   def success(self, node):
     self.node = node
+    # print(self.node)
     return self
 
   def failure(self, error):
@@ -586,6 +605,7 @@ class Parser:
         self.current_tok.pos_start, self.current_tok.pos_end,
         "Token cannot appear after previous tokens"
       ))
+    # print(res)
     return res
 
   ###################################
@@ -593,6 +613,7 @@ class Parser:
   def statements(self):
     res = ParseResult()
     statements = []
+    
     pos_start = self.current_tok.pos_start.copy()
 
     while self.current_tok.type == TT_NEWLINE:
@@ -621,12 +642,13 @@ class Parser:
         more_statements = False
         continue
       statements.append(statement)
-
+    # print(statements)
     return res.success(ListNode(
       statements,
       pos_start,
       self.current_tok.pos_end.copy()
     ))
+    
 
   def statement(self):
     res = ParseResult()
@@ -662,8 +684,6 @@ class Parser:
   def expr(self):
     res = ParseResult()
 
-    
-
     if self.current_tok.matches(TT_KEYWORD, 'VAR'):
       res.register_advancement()
       self.advance()
@@ -673,43 +693,9 @@ class Parser:
           self.current_tok.pos_start, self.current_tok.pos_end,
           "Expected identifier"
         ))
-      check_value = 0
+
       var_name = self.current_tok
-      value = self.current_tok.value
-      if self.current_tok.value in global_tokens:
-        check = 0
-        count = 0
-        self.advance()
-        self.advance()
-        new_value = self.current_tok.value
-        self.reverse()
-        self.reverse()
-        while check != 1:
-          self.reverse()
-          count+=1
-          if self.current_tok.value == value:
-            self.advance()
-            self.advance()
-            
-            count=count-2
-            if(new_value != self.current_tok.value):
-              check_value = 1
-            else:
-              check_value = 0
-            if(check_value != 0):
-              print("Kintamojo:",value," Sena reiksme:", self.current_tok)
-            check = 1
-        while count != 0:
-          self.advance()
-          count-=1
-        self.advance()
-        self.advance()
-        if(check_value != 0):
-          print("Nauja reiksme: ", self.current_tok)
-        self.reverse()
-        self.reverse()
-      else:
-        global_tokens.append(self.current_tok.value)
+      res.register_advancement()
       self.advance()
 
       if self.current_tok.type != TT_EQ:
@@ -733,6 +719,7 @@ class Parser:
       ))
 
     return res.success(node)
+
 
   def comp_expr(self):
     res = ParseResult()
@@ -1288,6 +1275,7 @@ class Parser:
     
     res = ParseResult()
     left = res.register(func_a())
+    
     if res.error: return res
 
     while self.current_tok.type in ops or (self.current_tok.type, self.current_tok.value) in ops:
@@ -1295,9 +1283,9 @@ class Parser:
       res.register_advancement()
       self.advance()
       right = res.register(func_b())
+      
       if res.error: return res
       left = BinOpNode(left, op_tok, right)
-
     return res.success(left)
 
 #######################################
@@ -1437,6 +1425,7 @@ class Number(Value):
   def __init__(self, value):
     super().__init__()
     self.value = value
+    
 
   def added_to(self, other):
     if isinstance(other, Number):
@@ -1938,6 +1927,7 @@ class Context:
 class SymbolTable:
   def __init__(self, parent=None):
     self.symbols = {}
+    
     self.parent = parent
 
   def get(self, name):
@@ -1948,9 +1938,19 @@ class SymbolTable:
 
   def set(self, name, value):
     self.symbols[name] = value
+    if name not in avoid:
+      if name in global_dict.keys():
+        for i ,(k, v) in enumerate(global_dict.items()):
+          if(name == k and value is not v ):
+            print("Variable:",k,"has been changed" ,"Old value:",v,"New value:" , value )
+            global_dict[name]= value
+      else:
+        global_dict[name]= value
 
   def remove(self, name):
     del self.symbols[name]
+
+  
 
 #######################################
 # INTERPRETER
