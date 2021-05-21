@@ -1938,14 +1938,16 @@ class SymbolTable:
 
   def set(self, name, value):
     self.symbols[name] = value
-    if name not in avoid:
-      if name in global_dict.keys():
-        for i ,(k, v) in enumerate(global_dict.items()):
-          if(name == k and value is not v ):
-            print("Variable:",k,"has been changed" ,"Old value:",v,"New value:" , value )
-            global_dict[name]= value
-      else:
-        global_dict[name]= value
+    if "debugging" in global_dict:
+      if name not in avoid:
+          if name in global_dict.keys():
+            for i ,(k, v) in enumerate(global_dict.items()):
+              if(name == k and value is not v ):
+                print("Variable:",k,"has been changed" ,"Old value:",v,"New value:" , value )
+                global_dict[name]= value
+    global_dict[name]= value
+      
+      
 
   def remove(self, name):
     del self.symbols[name]
